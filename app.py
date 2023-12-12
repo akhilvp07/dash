@@ -1,6 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
+
+# Define the host variable
+HOST = '192.168.0.108'
 
 # Dummy data for demonstration purposes
 devices = [
@@ -15,5 +18,16 @@ devices = [
 def index():
     return render_template('dashboard.html', devices=devices)
 
+@app.route('/add_device', methods=['POST'])
+def add_device():
+    data = request.get_json()
+    new_device = {
+        'name': data['name'],
+        'ip': data['ip']
+    }
+    devices.append(new_device)
+    return jsonify(devices)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Change the host parameter to your desired IP address
+    app.run(host=HOST, port=5000, debug=True)

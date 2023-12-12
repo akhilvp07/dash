@@ -4,10 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Device Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Device Dashboard</h1>
-    <table border="1">
+    <form id="addDeviceForm">
+        <label for="deviceName">Device Name:</label>
+        <input type="text" id="deviceName" name="deviceName" required>
+
+        <label for="deviceIP">IP Address:</label>
+        <input type="text" id="deviceIP" name="deviceIP" required>
+
+        <button type="button" onclick="addDevice()">Add Device</button>
+    </form>
+    <table>
         <thead>
             <tr>
                 <th>Device Name</th>
@@ -23,5 +33,51 @@
             {% endfor %}
         </tbody>
     </table>
+    <!-- <button type="button" onclick="addDevice()">Add Device</button> -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            loadDevices();
+        });
+    
+        function addDevice() {
+            var deviceName = document.getElementById("deviceName").value;
+            var deviceIP = document.getElementById("deviceIP").value;
+    
+            fetch('http://${HOST}:5000/add_device', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: deviceName, ip: deviceIP }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the table with the new data
+                updateTable(data);
+    
+                // Clear the form inputs
+                document.getElementById("addDeviceForm").reset();
+            });
+        }
+    
+        function loadDevices() {
+            fetch('http://${HOST}:5000/')
+            .then(response => response.json())
+            .then(data => {
+                // Update the table with the loaded data
+                updateTable(data);
+            });
+        }
+    
+        function updateTable(data) {
+            var tableBody = document.querySelector("table tbody"); // Corrected selector
+            tableBody.innerHTML = "";  // Clear existing rows
+    
+            data.forEach(function (device) {
+                var newRow = "<tr><td>" + device.name + "</td><td>" + device.ip + "</td></tr>";
+                tableBody.innerHTML += newRow;
+            });
+        }
+    </script>
 </body>
 </html>
