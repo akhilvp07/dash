@@ -8,6 +8,7 @@
 </head>
 <body>
     <h1>Device Dashboard</h1>
+    <button type="button" onclick="toggleAddDeviceForm()">Add Device</button>
     <form id="addDeviceForm">
         <label for="deviceName">Device Name:</label>
         <input type="text" id="deviceName" name="deviceName" required>
@@ -15,8 +16,11 @@
         <label for="deviceIP">IP Address:</label>
         <input type="text" id="deviceIP" name="deviceIP" required>
 
-        <button type="button" onclick="addDevice()">Add Device</button>
+        <button type="button" onclick="addDevice()">Save</button>
+        <button type="button" onclick="toggleAddDeviceForm()">Cancel</button>
     </form>
+    <!-- Display error message -->
+    <div id="errorMessage" style="color: red;"></div>
     <table>
         <thead>
             <tr>
@@ -33,51 +37,87 @@
             {% endfor %}
         </tbody>
     </table>
-    <!-- <button type="button" onclick="addDevice()">Add Device</button> -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            loadDevices();
-        });
-    
-        function addDevice() {
-            var deviceName = document.getElementById("deviceName").value;
-            var deviceIP = document.getElementById("deviceIP").value;
-    
-            fetch('http://${HOST}:5000/add_device', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: deviceName, ip: deviceIP }),
-            })
+<script>
+    var HOST = "{{ HOST }}";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadDevices();
+    });
+
+    function loadDevices() {
+        fetch(`http://${HOST}:5000/get_devices`)
             .then(response => response.json())
             .then(data => {
+                // Check if the response is an array
+                if (Array.isArray(data)) {
+                    // Update the table with the loaded data
+                    updateTable(data);
+                } else {
+                    console.error('Invalid response format:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading devices:', error);
+            });
+    }
+
+    function toggleAddDeviceForm() {
+            var addDeviceForm = document.getElementById("addDeviceForm");
+            addDeviceForm.style.display = addDeviceForm.style.display === "none" || addDeviceForm.style.display === "" ? "block" : "none";
+        }
+
+    function addDevice() {
+        var deviceName = document.getElementById("deviceName").value;
+        var deviceIP = document.getElementById("deviceIP").value;
+        // Check if inputs are empty
+        if (!deviceName.trim() || !deviceIP.trim()) {
+            displayErrorMessage('Device name and IP cannot be empty.');
+            return;
+        }
+        fetch(`http://${HOST}:5000/add_device`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: deviceName, ip: deviceIP }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Check if the response is an array
+            if (Array.isArray(data)) {
                 // Update the table with the new data
                 updateTable(data);
-    
+
                 // Clear the form inputs
                 document.getElementById("addDeviceForm").reset();
-            });
-        }
-    
-        function loadDevices() {
-            fetch('http://${HOST}:5000/')
-            .then(response => response.json())
-            .then(data => {
-                // Update the table with the loaded data
-                updateTable(data);
-            });
-        }
-    
-        function updateTable(data) {
-            var tableBody = document.querySelector("table tbody"); // Corrected selector
-            tableBody.innerHTML = "";  // Clear existing rows
-    
-            data.forEach(function (device) {
-                var newRow = "<tr><td>" + device.name + "</td><td>" + device.ip + "</td></tr>";
-                tableBody.innerHTML += newRow;
-            });
-        }
-    </script>
+            } else {
+                console.error('Invalid response format:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Error adding device:', error);
+        });
+    }
+
+    function updateTable(data) {
+        var tableBody = document.querySelector("table tbody");
+        tableBody.innerHTML = "";
+
+        data.forEach(function (device) {
+            var newRow = "<tr><td>" + device.name + "</td><td>" + device.ip + "</td></tr>";
+            tableBody.innerHTML += newRow;
+        });
+    }
+    // Function to display error message
+    function displayErrorMessage(message) {
+        var errorMessageElement = document.getElementById("errorMessage");
+        errorMessageElement.textContent = message;
+
+        // Clear the error message after a certain time (e.g., 3 seconds)
+        setTimeout(function () {
+            errorMessageElement.textContent = '';
+        }, 3000); // Adjust the time as needed
+    }
+</script>
 </body>
 </html>

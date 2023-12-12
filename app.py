@@ -16,7 +16,11 @@ devices = [
 
 @app.route('/')
 def index():
-    return render_template('dashboard.html', devices=devices)
+    return render_template('dashboard.html', devices=devices, HOST=HOST)
+
+@app.route('/get_devices')
+def get_devices():
+    return jsonify(devices)
 
 @app.route('/add_device', methods=['POST'])
 def add_device():
